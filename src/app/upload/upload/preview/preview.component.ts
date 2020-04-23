@@ -1,6 +1,6 @@
 import { Component, OnInit, TemplateRef } from '@angular/core';
 import { UploadService } from 'src/app/shared/services/upload.service';
-import { Brick, TypedProperty, Term } from 'src/app/shared/models/brick';
+import { Brick, TypedProperty, Term, ORef } from 'src/app/shared/models/brick';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 import { Router } from '@angular/router';
 
@@ -32,9 +32,13 @@ export class PreviewComponent implements OnInit {
     this.uploadService.getRefsToCoreObjects()
       .subscribe((res: any) => {
         this.coreObjectRefs = res.results;
-        this.totalObjectsMapped = this.coreObjectRefs.length
-          ? this.coreObjectRefs.reduce((a, c) => a.count + c.count) : 0;
-        this.brick.coreObjectRefsError = this.totalObjectsMapped === 0;
+	this.totalObjectsMapped = 0;
+	if ((this.coreObjectRefs) && (this.coreObjectRefs.length > 0)) {
+	   for (var x of this.coreObjectRefs) {
+	      this.totalObjectsMapped += x.count;
+	   }
+	}
+        this.brick.coreObjectRefsError = (this.totalObjectsMapped === 0);
       });
   }
 
@@ -43,9 +47,13 @@ export class PreviewComponent implements OnInit {
   }
 
   getPropValueDisplay(prop: TypedProperty) {
-    return prop.scalarType === 'oterm_ref'
-      ? (prop.value as Term).text
-      : prop.value;
+    if (prop.scalarType === 'oterm_ref')
+      return (prop.value as Term).text;
+    else if (prop.scalarType === 'object_ref')
+      return (prop.value as ORef).text;
+      // return JSON.stringify(prop.value);
+    else
+      return prop.value;
   }
 
 }
