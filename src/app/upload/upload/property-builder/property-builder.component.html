@@ -6,12 +6,27 @@
           <h5 class="mb-0 mt-2" style="float: left">
             Add Properties To Your Brick
           </h5>
-          <button class="btn btn-link" (click)="addProperty()" style="float: right">
+          <!-- <button class="btn btn-link add-property" (click)="addProperty()" style="float: right">
             + Add Property
-          </button> 
+          </button>  -->
         </div>
       </div>
-      <hr />
+      <!-- <hr /> -->
+      <div class="p-3">
+        <span>Add metadata here that apply to your entire experiment.  E.g., were all the measurements taken on one instrument, or at one environmental location, or at a constant temperature?  Don't put in the person, lab, or date the experiment was conducted; those will be asked at the next step.</span>
+      </div>
+      <div class="row">
+        <div class="col-12 mb-3">
+          <button style="float: left;" class="btn btn-link add-property" (click)="addProperty()">
+            + Add Property
+          </button>
+          <a
+            style="float: right; padding-top: 8px; padding-right: 6px;"
+            routerLink="/microtypes"
+            [queryParams]="{filter: 'mt_property'}"
+            target="_blank">View Valid Properties</a>
+        </div>
+      </div>
     </div>
     <div class="col-12">
       <div class="card">

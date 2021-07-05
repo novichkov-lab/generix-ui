@@ -1,20 +1,20 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { AsyncDropdownComponent } from './async-dropdown.component';
+import { ImageDisplayComponent } from './image-display.component';
 
-describe('AsyncDropdownComponent', () => {
-  let component: AsyncDropdownComponent;
-  let fixture: ComponentFixture<AsyncDropdownComponent>;
+describe('ImageDisplayComponent', () => {
+  let component: ImageDisplayComponent;
+  let fixture: ComponentFixture<ImageDisplayComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ AsyncDropdownComponent ]
+      declarations: [ ImageDisplayComponent ]
     })
     .compileComponents();
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(AsyncDropdownComponent);
+    fixture = TestBed.createComponent(ImageDisplayComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

@@ -3,11 +3,9 @@ import { NgModule, ErrorHandler } from '@angular/core';
 import { SearchModule } from './search/search.module';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { Select2Module } from 'ng2-select2';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { PlotModule } from './plot/plot.module';
-import * as PlotlyJS from 'plotly.js/dist/plotly.js';
-import { PlotlyModule } from 'angular-plotly.js';
+import { PlotlyViaWindowModule } from 'angular-plotly.js';
 import { LoginComponent } from './shared/components/login/login.component';
 import { HomeComponent } from './shared/components/home/home.component';
 import { ReportsComponent } from './shared/components/reports/reports.component';
@@ -23,8 +21,14 @@ import { ServerErrorInterceptor } from 'src/app/shared/services/server-error-int
 import { ErrorComponent } from './shared/components/error/error.component';
 import { MicrotypeBrowserComponent } from './shared/components/microtype-browser/microtype-browser.component';
 import { DashboardPlotComponent } from './shared/components/dashboard/dashboard-plot/dashboard-plot.component';
-
-PlotlyModule.plotlyjs = PlotlyJS;
+import { NgSelectModule } from '@ng-select/ng-select';
+import { TreeModule } from 'angular-tree-component';
+import { ProvenanceGraphComponent } from './shared/components/provenance-graph/provenance-graph.component';
+import { ResizableModule } from 'angular-resizable-element'
+import { AuthInterceptor } from 'src/app/shared/services/auth-interceptor';
+import { AgmCoreModule } from '@agm/core';
+import { environment }  from 'src/environments/environment';
+import { NgxSliderModule } from '@angular-slider/ngx-slider';
 @NgModule({
   declarations: [
     AppComponent,
@@ -35,20 +39,27 @@ PlotlyModule.plotlyjs = PlotlyJS;
     ErrorComponent,
     MicrotypeBrowserComponent,
     DashboardPlotComponent,
+    ProvenanceGraphComponent,
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     SearchModule,
     HttpClientModule,
-    Select2Module,
     PlotModule,
     NgxSpinnerModule,
-    PlotlyModule,
     FormsModule,
     UploadModule,
     ModalModule.forRoot(),
-    TooltipModule.forRoot()
+    TooltipModule.forRoot(),
+    NgSelectModule,
+    TreeModule.forRoot(),
+    ResizableModule,
+    PlotlyViaWindowModule,
+    AgmCoreModule.forRoot({
+      apiKey: environment.GOOGLE_MAPS_API_KEY
+    }),
+    NgxSliderModule
   ],
   providers: [
     {
@@ -63,6 +74,11 @@ PlotlyModule.plotlyjs = PlotlyJS;
     {
       provide: HTTP_INTERCEPTORS,
       useClass: ServerErrorInterceptor,
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
       multi: true
     }
   ],

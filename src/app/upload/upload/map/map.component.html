@@ -3,11 +3,14 @@
     <div class="col-12">
       <div class="row">
         <div class="col-12">
-          <h5 class="mb-0 mt-2" style="float: left">Validate Brick Data</h5>
-          <button class="btn btn-primary" style="float: right" (click)="getValidationResults()">Validate</button>
+          <h5 class="mb-0 mt-3" style="float: left">Validate Brick Data</h5>
+          <button class="btn btn-primary get-validation" style="float: right" (click)="getValidationResults()">Validate</button>
         </div>
       </div>
-      <hr />
+      <!-- <hr /> -->
+      <div class="p-3 mb-3">
+        <span>Press the "Validate" button, then make sure all your data are valid before continuing.  You can see any import errors.  Common errors include missing strain/sample names and improperly parsed missing data.  Contact JMChandonia@lbl.gov to report bugs.</span>
+      </div>
       <div class="row mt-2">
         <div class="col-12">
           <div class="card" *ngIf="dataVars.length">
@@ -15,7 +18,7 @@
               <h5>Data Variables</h5>
             </div>
             <div class="card-body">
-              <table class="table table-bordered">
+              <table class="table table-bordered data-vars-map">
                 <thead class="table-header">
                   <tr>
                     <th>Variable</th>
@@ -83,7 +86,7 @@
               <h5>Dimension Variables</h5>
             </div>
             <div class="card-body">
-              <table class="table table-bordered">
+              <table class="table table-bordered dim-vars-map">
                 <thead class="table-header">
                   <tr>
                     <th>Variable</th>

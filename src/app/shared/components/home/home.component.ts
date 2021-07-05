@@ -1,80 +1,90 @@
-import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { QueryParam, QueryMatch } from '../../models/QueryBuilder';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { QueryParam, QueryMatch, QueryBuilder, Process } from '../../models/QueryBuilder';
 import { isEqual } from 'lodash';
 import { HomeService } from '../../services/home.service';
 import { QueryBuilderService } from '../../services/query-builder.service';
 import { Router } from '@angular/router';
-import { NgxSpinnerService } from 'ngx-spinner';
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
-export class HomeComponent implements OnInit {
-
-  options: Select2Options = {
-    width: '100%'
-  };
+export class HomeComponent implements OnInit, OnDestroy {
 
   checkBoxArray: string[] = [];
   public filterCategories: any[] = [];
-  public filterQueryBuilder: QueryParam[] = [];
   public coreTypes: any;
   public dynamicTypes: any;
-  public loading = false;
+  navigateToResults = false;
+
+  query: QueryBuilder;
 
   constructor(
     private homeService: HomeService,
     private searchService: QueryBuilderService,
     private router: Router,
-    private spinner: NgxSpinnerService
     ) { }
 
   ngOnInit() {
-    this.getUpdatedValues();
+    this.query = this.searchService.getCurrentObject();
+    this.query.searchAllProcessesDown = true;
+    this.query.searchAllProcessesUp = true;
+    this.homeService.getProvenanceGraphData(this.query.processesUp);
 
     this.homeService.getFilterValues()
       .subscribe((res: any) => {
         this.filterCategories = res.results;
+        this.query.processesUp.forEach(process => {
+          if (process.attribute === 'campaign') {
+            this.checkBoxArray.push('0_' + this.filterCategories[0].items.findIndex(d => d.queryParam.term === process.term));
+          } else if (process.attribute === 'person') {
+            this.checkBoxArray.push('1_' + this.filterCategories[1].items.findIndex(d => d.queryParam.term === process.term));
+          }
+        });
       });
   }
 
+  ngOnDestroy() {
+    if (!this.navigateToResults) {
+      // only clear search if user is navigating to /search but not /search/results
+      this.searchService.resetObject();
+    }
+  }
+
   getUpdatedValues() {
-    this.loading = true;
-    this.spinner.show();
-    this.homeService.getUpdatedValues(this.filterQueryBuilder)
-    .subscribe((res: any) => {
-      this.loading = false;
-      this.spinner.hide();
-      if (res.status === 'OK') {
-        this.coreTypes = res.results.core_types;
-        this.dynamicTypes = res.results.dynamic_types;
-      }
-    });
+    this.homeService.getProvenanceGraphData(this.query.processesUp);
+  }
+
+  shouldBeChecked(id) {
+    return this.checkBoxArray.includes(id);
   }
 
   onValueChecked(event) {
-
-    const [i, j] = event.target.id.split(' ').map(o => parseInt(o, 10));
+    const [i, j] = event.target.id.split('_').map(o => parseInt(o, 10));
     const selected = this.filterCategories[i].items[j].queryParam as QueryParam;
 
     if (this.checkBoxArray.includes(event.target.id)) {
-      this.filterQueryBuilder = this.filterQueryBuilder.filter(item => {
+      this.query.processesUp = this.query.processesUp.filter(item => {
         return !(isEqual(item, selected));
       });
       this.checkBoxArray = this.checkBoxArray.filter(item => item !== event.target.id);
     } else {
       this.checkBoxArray.push(event.target.id);
-      this.filterQueryBuilder.push(selected);
+      this.query.processesUp.push(selected);
     }
-    // this.getUpdatedValues();
   }
 
-  navigateToSearch(queryMatch: QueryMatch) {
-    queryMatch.params = this.filterQueryBuilder;
-    this.searchService.submitSearchResultsFromHome(queryMatch);
-    this.router.navigate(['/search/result']);
+  navigateToSearch({query, process}: {query: QueryMatch, process?: Process}) {
+    this.query.queryMatch = query;
+    this.query.parentProcesses = process;
+    this.navigateToResults = true;
+    this.router.navigate(['/search/result'], {
+      queryParams: {
+        redirect: 'home',
+        category: query.category
+      }
+    });
+    this.searchService.setQueryBuilderCache();
   }
 
 }

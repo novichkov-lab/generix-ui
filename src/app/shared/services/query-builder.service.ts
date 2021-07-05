@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
-import { QueryBuilder, QueryMatch, QueryParam } from '../models/QueryBuilder';
+import { QueryBuilder } from '../models/QueryBuilder';
 import { Subject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
-import { Router, NavigationEnd } from '@angular/router';
+import { Router } from '@angular/router';
+import { Observable } from 'rxjs';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 @Injectable({
   providedIn: 'root'
 })
@@ -18,26 +20,28 @@ export class QueryBuilderService {
   operators: any[];
   dataTypeHash: any = {};
   previousUrl: string;
-  // currentUrl: string;
 
   constructor(
     private http: HttpClient,
-    private router: Router
-  ) {
-    http.get(`${environment.baseURL}/data_models`)
-      .subscribe((models: any) => {
-        this.dataModels = models.results;
-        http.get(`${environment.baseURL}/data_types`)
-        .subscribe((types: any) => {
-          this.dataTypes = types.results;
-          this.dataTypeSub.next(this.dataTypes);
-          this.dataTypes.forEach((dataType: any) => {
-            const dataModel = this.dataModels[dataType.dataModel];
-            this.dataTypeHash[dataType.dataType] = dataModel.properties;
-          });
+    private router: Router,
+    private santitizer: DomSanitizer
+  ) { }
+
+  getDataTypesandModels() {
+    this.http.get(`${environment.baseURL}/data_models`)
+    .subscribe((models: any) => {
+      this.dataModels = models.results;
+      this.http.get(`${environment.baseURL}/data_types`)
+      .subscribe((types: any) => {
+        this.dataTypes = types.results;
+        this.dataTypeSub.next(this.dataTypes);
+        this.dataTypes.forEach((dataType: any) => {
+          const dataModel = this.dataModels[dataType.dataModel];
+          this.dataTypeHash[dataType.dataType] = dataModel.properties;
         });
       });
-    http.get(`${environment.baseURL}/search_operations`)
+    });
+    this.http.get(`${environment.baseURL}/search_operations`)
       .subscribe((operations: any) => {
         this.operators = operations.results;
       });
@@ -71,20 +75,25 @@ export class QueryBuilderService {
     this.queryBuilderObject = new QueryBuilder();
   }
 
-  submitSearchResultsFromHome(queryMatch: QueryMatch) {
-    this.queryBuilderObject = new QueryBuilder();
-    this.queryBuilderObject.queryMatch = queryMatch;
-  }
-
   validSearchQuery() {
     return this.queryBuilderObject.isValid;
   }
 
-  getSearchResults() {
+  getSearchResults(format = 'JSON') {
     if (this.queryBuilderObject.isEmpty) {
       this.queryBuilderObject = this.getQueryBuilderCache();
     }
-    return this.http.post<any>(`${environment.baseURL}/search`, this.queryBuilderObject);
+    return this.http.post<any>(`${environment.baseURL}/search`, {...this.queryBuilderObject, format}, {
+      responseType: format === 'TSV' ? 'arraybuffer' as 'json' : 'json'
+    });
+  }
+
+  downloadCoreType(id: string) {
+    return this.http.post<any>(`${environment.baseURL}/core_type_metadata/${id}`, {format: 'TSV'});
+  }
+
+  downloadBrick(id: string, format: string) {
+    return this.http.post<any>(`${environment.baseURL}/brick/${id}`, {format});
   }
 
   getObjectMetadata(id) {
@@ -95,22 +104,19 @@ export class QueryBuilderService {
     return this.http.get(`${environment.baseURL}/core_type_metadata/${id}`);
   }
 
+  getCoreTypeProps(name: string) {
+    return this.http.get(`${environment.baseURL}/core_type_props/${name}`)
+  }
+
   getDimensionVariableValues(id: string, dimIdx: number) {
     return this.http.get(`${environment.baseURL}/brick_dimension/${id}/${dimIdx}`);
   }
 
   getDataTypes() {
-    // return this.http.get(`${environment.baseURL}/data_types`);
-    // return [...this.dataTypes.map((type, idx) => {
-    //   return { id: idx.toString(), text: type.dataType }
-    // })];
     return this.dataTypeSub.asObservable();
   }
 
   getAttributes(dataType) {
-    // return [{id: '', text: ''}, ...this.dataTypeHash[dataType].map((att, idx) => {
-    //   return {id: idx.toString(), text: att.name}
-    // })]
     return this.dataTypeHash[dataType];
   }
 
@@ -123,10 +129,7 @@ export class QueryBuilderService {
   }
 
   getOperators() {
-    // return this.http.get(`${environment.baseURL}/search_operations`);
-    return [{id: '', text: ''},...this.operators.map((op, idx) => {
-      return {id: idx.toString(), text: op };
-    })];
+    return this.operators;
   }
 
   getOperatorValue(item) {
@@ -150,6 +153,31 @@ export class QueryBuilderService {
 
   setSearchType(searchType: string) {
     this.searchType = searchType;
+  }
+
+  getProcessOterms() {
+    return this.http.get(`${environment.baseURL}/get_process_oterms`);
+  }
+
+  getCampaignOterms(): Observable<any> {
+    return this.http.get<any>(`${environment.baseURL}/get_campaign_oterms`);
+  }
+
+  getPersonnelOterms() {
+    return this.http.get(`${environment.baseURL}/get_personnel_oterms`);
+  }
+
+  getImageSrc(url): Promise<SafeUrl> {
+    return new Promise((resolve, reject) => {
+      this.http.post(`${environment.baseURL}/image`, {url})
+        .subscribe((response: any) => {
+          resolve(this.santitizer.bypassSecurityTrustUrl('data:image/jpeg;base64,' + response.results.image))
+        });
+    });
+  }
+
+  getMapSearchResults(query: QueryBuilder) {
+    return this.http.post<any>(`${environment.baseURL}/search`, query);
   }
 
 

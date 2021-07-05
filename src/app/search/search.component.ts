@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { Router, NavigationEnd } from '@angular/router';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { QueryBuilderService } from '../shared/services/query-builder.service';
 
 @Component({
@@ -7,15 +7,17 @@ import { QueryBuilderService } from '../shared/services/query-builder.service';
   templateUrl: './search.component.html',
   styleUrls: ['./search.component.css']
 })
-export class SearchComponent implements OnInit {
+export class SearchComponent implements OnInit, OnDestroy {
 
   currentUrl = '';
   previousUrl = '';
   hasIdParams = false;
+  navigatedFromHome = false;
 
   constructor(
     private router: Router,
     private queryBuilder: QueryBuilderService,
+    private route: ActivatedRoute
     ) { }
 
   ngOnInit() {
@@ -26,6 +28,17 @@ export class SearchComponent implements OnInit {
         this.currentUrl = event.url;
       }
     });
+    this.route.queryParams.subscribe(params => {
+      if (params['redirect']) {
+        this.navigatedFromHome = true;
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    if (!this.navigatedFromHome) {
+      this.queryBuilder.resetObject();
+    }
   }
 
   redirectTo(url) {
@@ -34,11 +47,11 @@ export class SearchComponent implements OnInit {
   }
 
   navigateToSearchResult() {
-    this.router.navigate(['search/result']);
+    const queryParams = this.navigatedFromHome ? { redirect: 'home' } : {}
+    this.router.navigate(['search/result'], {queryParams});
   }
 
   navigateToPreviousItem() {
     this.router.navigate([this.previousUrl]);
   }
-
 }

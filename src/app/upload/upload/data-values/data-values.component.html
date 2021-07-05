@@ -4,10 +4,19 @@
       <div class="row">
         <div class="col-12">
           <h5 class="mb-0 mt-2" style="float: left">Define your Brick's Data Variables</h5>
-          <button class="btn btn-link" style="float: right" (click)="addDataValue()">+ Add Data Variable</button>
+          <!-- <button class="btn btn-link" style="float: right" (click)="addDataValue()">+ Add Data Variable</button> -->
         </div>
       </div>
-      <hr />
+      <!-- <hr /> -->
+      <div class="p-3">
+        <span>Enter all the dependent variables that were measured in your dataset.  Say exactly what was measured; e.g., "optical density" for microbial growth, or "concentration" for chemical measurements.  In the latter case, provide additional context using the context button (the one with three dots) to say what molecule was measured (e.g., molecule = nitrate).</span>
+      </div>
+      <div class="row">
+        <div class="col-12 mb-3">
+          <button class="btn btn-link" style="float: left;" (click)="addDataValue()">+ Add Data Variable</button>
+          <a style="float: right; padding-top: 8px; padding-right: 6px" routerLink="/microtypes" [queryParams]="{filter: 'mt_data_var'}"  target="_blank">View Valid Data Variables</a>
+        </div>
+      </div>
       <div class="card">
         <div class="card-header light-blue">
           <h5 class="mb-0" style="float:left">Data Variables</h5>

@@ -8,6 +8,9 @@ export class QueryBuilder {
     public connectsDownTo: QueryMatch;
     public processesUp: QueryParam[] = [];
     public processesDown: QueryParam[] = [];
+    public searchAllProcessesUp = false;
+    public searchAllProcessesDown = false;
+    parentProcesses: Process;
 
     get isEmpty() {
         return isEqual(this, new QueryBuilder());
@@ -27,11 +30,13 @@ export class QueryBuilder {
 
 export class QueryMatch {
     constructor(
-        dType?: string,
-        dModel?: string
+        data?: QueryMatchData
     ) {
-        this.dataType = dType;
-        this.dataModel = dModel;
+        if (data) {
+            this.dataType = data.dataType;
+            this.dataModel = data.dataModel;
+            this.category = data.category;
+        }
         this.params = [];
     }
     public dataModel = '';
@@ -43,6 +48,14 @@ export class QueryMatch {
         return isEqual(this, new QueryMatch());
     }
 
+    get data() {
+        return {
+            dataType: this.dataType,
+            dataModel: this.dataModel,
+            category: this.category
+        }
+    }
+
     isValid() {
         if (this.isEmpty) { return false; }
         for (const param of this.params) {
@@ -50,6 +63,12 @@ export class QueryMatch {
         }
         return true;
     }
+}
+
+export interface QueryMatchData {
+    dataType: string;
+    dataModel: string;
+    category: string;
 }
 
 export class QueryParam {
@@ -68,6 +87,7 @@ export class QueryParam {
     public matchType: string;
     public scalarType: string;
     public keyword = '';
+    public term?: string;
 
     get isValid() {
         if (
@@ -80,5 +100,16 @@ export class QueryParam {
          }
         return true;
     }
+ 
 }
 
+export class Process {
+    // interface for defining process inputs and outputs for queries from provenance graph
+    constructor(processInputs: string[], processOutputs: string[]) {
+        this.processInputs = processInputs;
+        this.processOutputs = processOutputs;
+    }
+
+    processInputs: string[];
+    processOutputs: string[];
+}

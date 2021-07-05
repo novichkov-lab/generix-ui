@@ -1,10 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { UploadDragDropDirective } from 'src/app/shared/directives/upload-drag-drop.directive';
 import { UploadService } from 'src/app/shared/services/upload.service';
-import { Brick, BrickDimension, TypedProperty, Term } from 'src/app/shared/models/brick';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { Subscription } from 'rxjs';
 import { UploadValidationService } from 'src/app/shared/services/upload-validation.service';
+import { Brick } from 'src/app/shared/models/brick';
 
 
 @Component({
@@ -23,16 +23,22 @@ export class LoadComponent implements OnInit, OnDestroy {
 
   file: File = null;
   fileSize: string;
-  brick: Brick;
   successData: any;
   error = false;
   errorMessage: string;
   loading = false;
   validationError = false;
   validationErrorSub: Subscription;
+  public brick: Brick;
+  templateTypeError = false;
+
+  templateTypeOptions: {type: string, text: string}[] = [
+    {type: 'interlace', text: 'Interlace all data on same page'},
+  ];
 
   ngOnInit() {
     this.brick = this.uploadService.getBrickBuilder();
+    this.setTemplateTypeOptions();
     this.getUploadData();
     this.validationErrorSub = this.validator.getValidationErrors()
      .subscribe(error => this.validationError = error);
@@ -41,6 +47,22 @@ export class LoadComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.validationErrorSub) {
       this.validationErrorSub.unsubscribe();
+    }
+  }
+
+  setTemplateTypeOptions() {
+    if (this.brick.dimensions.length < 2) return;
+    if (this.brick.dataValues.length > 1) {
+      this.templateTypeOptions.push({
+        type: 'tab_data',
+        text: 'Spread individual data vars across tabs'
+      });
+    }
+    if (this.brick.dimensions.length > 2) {
+      this.templateTypeOptions.push({
+        type: 'tab_dims',
+        text: `Spread out ${this.brick.dimensions[this.brick.dimensions.length - 1].type.text} across tabs`
+      });
     }
   }
 
@@ -86,17 +108,26 @@ export class LoadComponent implements OnInit, OnDestroy {
    }
 
    downloadTemplate() {
+     if (this.templateTypeOptions.length > 1 && !this.brick.sheet_template_type) {
+       this.templateTypeError = true;
+       return;
+     }
+     this.templateTypeError = false;
      this.uploadService.downloadBrickTemplate()
       .then((data: Blob) => {
-        const url = window.URL.createObjectURL(data);
-        const a = document.createElement('a');
-        document.body.appendChild(a);
-        a.setAttribute('style', 'display: none');
-        a.href = url;
-        a.click();
-        window.URL.revokeObjectURL(url);
-        a.remove();
+        this.addUrlToPageAndClick(data);
       });
+   }
+
+   addUrlToPageAndClick(data: Blob) {
+    const url = window.URL.createObjectURL(data);
+    const a = document.createElement('a');
+    document.body.appendChild(a);
+    a.setAttribute('style', 'display: none');
+    a.href = url;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
    }
 
    upload() {
@@ -106,6 +137,8 @@ export class LoadComponent implements OnInit, OnDestroy {
     this.uploadService.uploadBrick(this.file).then((res: any) => {
       this.loading = false;
       this.spinner.hide();
+      this.error = false;
+      delete this.errorMessage;
       this.successData = res.results;
       this.uploadService.setSuccessData(res.results);
     },
